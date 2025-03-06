@@ -12,11 +12,11 @@ up:
 		--name n8n-${N8N_VERSION} \
 		-e N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true \
 		-e N8N_RUNNERS_ENABLED=true \
-		-e N8N_ENCRYPTION_KEY=c58jTZ+P+6YwvrJZ5kZgv51slizggCIniv2FtYBIG1ZsVn+f1k/rrxuXhi2Ho7cc \
-		-e N8N_SECURE_COOKIE=false \
+		-e N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY} \
+		-e N8N_SECURE_COOKIE=${IS_PRODUCTION_TRUE} \
 		-e N8N_LOG_LEVEL=info \
 		-e N8N_LOG_OUTPUT=console \
-		-e NODE_FUNCTION_ALLOW_EXTERNAL=puppeteer-core \
+		-e NODE_FUNCTION_ALLOW_EXTERNAL=${EXTERNAL_PACKAGES} \
 		-p 5678:5678 \
 		--restart unless-stopped \
 		-v n8n_data-${N8N_VERSION}:/home/node/.n8n \
