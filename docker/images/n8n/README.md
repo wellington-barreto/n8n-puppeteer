@@ -6,6 +6,38 @@ n8n is a workflow automation platform that gives technical teams the flexibility
 
 **Note**: *This project is forked from the [official n8nio/n8n repository](https://github.com/n8n-io/n8n.git) and includes additional components to allow for Puppeteer to function properly within code nodes.*
 
+## Prerequisites
+
+Before you begin, ensure that you have the following tools installed:
+
+### 1. **Docker**
+Docker is required to build and run containers for n8n. If you don't have Docker installed, you can follow the instructions below to get it set up on your machine.
+
+- **Read more**: [Docker Installation Guide](https://docs.docker.com/get-docker/)
+
+### 2. **Make**
+Make is a build automation tool that simplifies tasks like building containers and managing projects. It is required for running the `make up` command to start n8n.
+
+- **Read more**: [Make Installation Guide](https://www.gnu.org/software/make/)
+
+### 3. **OpenSSL**
+OpenSSL is a toolkit that provides encryption functions, and we use it to generate a secure encryption key for n8n. Make sure it is installed before running the setup.
+
+- **Read more**: [OpenSSL Installation Guide](https://www.openssl.org/)
+
+### Verifying Installation
+After installing these tools, you can verify their presence by running the following commands:
+```bash
+# Verify Docker
+docker --version
+
+# Verify Make
+make --version
+
+# Verify OpenSSL
+openssl version
+
+
 ## Usage
 
 ```bash
