@@ -4,6 +4,9 @@ FROM n8nio/base:${NODE_VERSION}
 ARG N8N_VERSION
 RUN if [ -z "$N8N_VERSION" ] ; then echo "The N8N_VERSION argument is missing!" ; exit 1; fi
 
+ARG PUPPETEER_VERSION
+RUN if [ -z "$PUPPETEER_VERSION" ] ; then echo "The PUPPETEER_VERSION argument is missing!" ; exit 1; fi
+
 LABEL org.opencontainers.image.title="n8n"
 LABEL org.opencontainers.image.description="Workflow Automation Tool"
 LABEL org.opencontainers.image.source="https://github.com/n8n-io/n8n"
@@ -43,9 +46,28 @@ RUN \
 
 COPY docker-entrypoint.sh /
 
+# Add puppeteer and chromium components.
+RUN \
+	apk add --no-cache \
+	chromium \
+	nss \
+	freetype \
+	harfbuzz \
+	ttf-freefont \
+	yarn \
+	&& apk --no-cache add --virtual fonts msttcorefonts-installer fontconfig \
+	&& update-ms-fonts \
+	&& fc-cache -f \
+	&& apk del fonts \
+	&& find  /usr/share/fonts/truetype/msttcorefonts/ -type l -exec unlink {} \; \
+	&& rm -rf /root /tmp/* /var/cache/apk/* && mkdir /root
+
+# Install puppeteer-core
+RUN npm cache clean --force && npm install puppeteer-core@${PUPPETEER_VERSION} --prefix /usr/local/lib/node_modules/n8n
+
 RUN \
 	mkdir .n8n && \
 	chown node:node .n8n
-ENV SHELL /bin/sh
+ENV SHELL=/bin/sh
 USER node
 ENTRYPOINT ["tini", "--", "/docker-entrypoint.sh"]
