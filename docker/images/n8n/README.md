@@ -27,6 +27,7 @@ OpenSSL is a toolkit that provides encryption functions, and we use it to genera
 
 ### Verifying Installation
 After installing these tools, you can verify their presence by running the following commands:
+
 ```bash
 # Verify Docker
 docker --version
@@ -37,8 +38,10 @@ make --version
 # Verify OpenSSL
 openssl version
 
+```
 
-## Usage
+## Setup
+To clone the repo, set up environment variables, build and run n8n, follow these steps:
 
 ```bash
 # Clone Repo
