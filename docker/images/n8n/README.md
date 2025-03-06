@@ -15,8 +15,10 @@ git clone https://github.com/devszilla/n8n-puppeteer.git
 # Navigate to the correct directory
 cd n8n-puppeteer/docker/images/n8n
 
-# Ensure OpenSSL is installed
-if ! command -v openssl &> /dev/null; then
+# Check if OpenSSL is installed
+if command -v openssl &> /dev/null; then
+    echo "OpenSSL is installed: $(openssl version)"
+else
     echo "Error: OpenSSL is not installed. Please install it before proceeding."
     exit 1
 fi
