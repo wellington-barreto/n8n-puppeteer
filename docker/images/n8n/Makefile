@@ -3,7 +3,7 @@ include .env
 up:
 	docker network create n8n_network || true
 	docker volume create n8n_data-${N8N_VERSION} || true
-	docker build \
+	docker build --no-cache \
 		--build-arg N8N_VERSION=${N8N_VERSION} \
 		--build-arg PUPPETEER_VERSION=${PUPPETEER_VERSION} \
 		-t n8n-${N8N_VERSION} \
@@ -31,7 +31,7 @@ down:
 	# docker network rm n8n_network
 
 build:
-	docker build \
+	docker build --no-cache \
 		--build-arg N8N_VERSION=${N8N_VERSION} \
 		--build-arg PUPPETEER_VERSION=${PUPPETEER_VERSION} \
 		-t n8n-${N8N_VERSION} \
