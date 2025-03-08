@@ -36,7 +36,7 @@ docker --version
 make --version
 
 # Verify OpenSSL
-openssl version
+openssl --version
 
 ```
 
@@ -44,19 +44,11 @@ openssl version
 To clone the repo, set up environment variables, build and run n8n, follow these steps:
 
 ```bash
-# Clone Repo
+# Clone the repository
 git clone https://github.com/devszilla/n8n-puppeteer.git
 
-# Navigate to the correct directory
-cd n8n-puppeteer/docker/images/n8n
-
-# Check if OpenSSL is installed
-if command -v openssl &> /dev/null; then
-    echo "OpenSSL is installed: $(openssl version)"
-else
-    echo "Error: OpenSSL is not installed. Please install it before proceeding."
-    exit 1
-fi
+# Navigate to the project root directory
+cd n8n-puppeteer
 
 # Generate a secure encryption key
 ENCRYPTION_KEY=$(openssl rand -base64 32)
@@ -64,7 +56,7 @@ ENCRYPTION_KEY=$(openssl rand -base64 32)
 # Create a .env file with required variables
 printf "N8N_VERSION=1.59.4\nPUPPETEER_VERSION=23.1.0\nN8N_ENCRYPTION_KEY=$ENCRYPTION_KEY\nIS_PRODUCTION_TRUE=false\nEXTERNAL_PACKAGES=puppeteer-core\n" > .env
 
-# Build and start n8n-puppeteer as a container (requires Docker & Make)
+# Build and start n8n-puppeteer
 make up
 
 ```
