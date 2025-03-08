@@ -1,0 +1,79 @@
+{
+  "name": "Puppeteer Sample Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const puppeteer = require('puppeteer-core');\n\ntry {\n  const browser = await puppeteer.launch({\n    headless: 'new',\n    executablePath: '/usr/bin/chromium-browser',\n    args: ['--no-sandbox', '--disable-setuid-sandbox'],\n  });\n\n  const page = await browser.newPage();\n  await page.goto('https://www.google.com');\n\n  const screenshot = await page.screenshot({ encoding: 'base64' }); // Capture screenshot as base64\n\n  await browser.close();\n\n  return [{ success: true, screenshot: screenshot }]; // Return the screenshot\n\n} catch (error) {\n  return [{ success: false, error: error.message }]; // Return error information\n}"
+      },
+      "id": "fc3dab83-e6e4-4ccd-9cc1-bfa9e2c38943",
+      "name": "Get Google Screenshot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "1dc10281-b60a-4fdc-94dd-183788c33277",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "screenshot",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        0
+      ],
+      "id": "c104c313-e9fd-46d7-8df6-d260e13622a1",
+      "name": "Show Screenshot"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get Google Screenshot": {
+      "main": [
+        [
+          {
+            "node": "Show Screenshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Google Screenshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1a20d6a4-2cb9-4211-9a2e-6b3554bd7358",
+  "meta": {
+    "instanceId": "a2dd5ac79a20d5820a1738a49a3d72ac79185b8ee225254493f06727426144cb"
+  },
+  "id": "YGh4Ftjet7eDGIzS",
+  "tags": []
+}
