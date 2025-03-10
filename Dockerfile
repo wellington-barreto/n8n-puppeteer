@@ -30,4 +30,4 @@ USER node
 ENV SHELL=/bin/sh
 
 # Explicitly define tini entrypoint
-ENTRYPOINT ["/sbin/tini", "--", "/docker-entrypoint.sh"]
+ENTRYPOINT ["/sbin/tini", "--", "n8n"]
