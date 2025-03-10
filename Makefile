@@ -1,19 +1,25 @@
 # Include .env file if it exists
 ifneq ("$(wildcard .env)","")
     include .env
+    export
 endif
 
 # Make target to generate .env file
 create-env:
 	@echo "Generating .env file..."
-	ENCRYPTION_KEY=$(openssl rand -base64 32) && \
-	printf "PUPPETEER_VERSION=24.4.0\nN8N_VERSION=1.74.4\nN8N_ENCRYPTION_KEY=$$ENCRYPTION_KEY\nN8N_SECURE_COOKIE=false\nNODE_FUNCTION_ALLOW_EXTERNAL=puppeteer-core,cheerio,n8n-workflow\nN8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true\nN8N_RUNNERS_ENABLED=true\nN8N_LOG_LEVEL=info\nN8N_LOG_OUTPUT=console\n" > .env && \
-	echo ".env file created successfully."
+	@ENCRYPTION_KEY=$$(openssl rand -hex 32) && \
+	printf "PUPPETEER_VERSION=24.4.0\nN8N_VERSION=1.74.4\nN8N_ENCRYPTION_KEY=$$ENCRYPTION_KEY\nN8N_SECURE_COOKIE=false\nNODE_FUNCTION_ALLOW_EXTERNAL=puppeteer-core,cheerio,n8n-workflow\nN8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true\nN8N_RUNNERS_ENABLED=true\nN8N_LOG_LEVEL=info\nN8N_LOG_OUTPUT=console\n" > .env
+	@echo ".env file created successfully."
 
 # Make target to build the n8n Docker image
 build-image:
 	@echo "Building Docker image..."
-	@docker images n8n-${N8N_VERSION} -q > /dev/null 2>&1 && echo "Image 'n8n-${N8N_VERSION}' already exists. Removing..." && docker rmi -f n8n-${N8N_VERSION} || echo "No existing image to remove."
+	@if docker images n8n-${N8N_VERSION} -q > /dev/null 2>&1; then \
+		echo "Image 'n8n-${N8N_VERSION}' already exists. Removing..."; \
+		docker rmi -f n8n-${N8N_VERSION}; \
+	else \
+		echo "No existing image to remove."; \
+	fi
 	docker build \
 		--build-arg N8N_VERSION=${N8N_VERSION} \
 		--build-arg PUPPETEER_VERSION=${PUPPETEER_VERSION} \
@@ -23,9 +29,19 @@ build-image:
 # Make target to create Docker volume, network if not exist, start container
 docker-up: build-image
 	@echo "Checking if network exists..."
-	@docker network inspect n8n_network > /dev/null 2>&1 && echo "Network 'n8n_network' already exists, hopping to the next task 🦘." || (echo "Creating network..." && docker network create n8n_network)
+	@if docker network inspect n8n_network > /dev/null 2>&1; then \
+		echo "Network 'n8n_network' already exists, hopping to the next task 🦘."; \
+	else \
+		echo "Creating network..."; \
+		docker network create n8n_network; \
+	fi
 	@echo "Checking if volume exists..."
-	@docker volume inspect n8n_data-${N8N_VERSION} > /dev/null 2>&1 && echo "Volume 'n8n_data-${N8N_VERSION}' already exists, hopping to the next task 🦘." || (echo "Creating volume..." && docker volume create n8n_data-${N8N_VERSION})
+	@if docker volume inspect n8n_data-${N8N_VERSION} > /dev/null 2>&1; then \
+		echo "Volume 'n8n_data-${N8N_VERSION}' already exists, hopping to the next task 🦘."; \
+	else \
+		echo "Creating volume..."; \
+		docker volume create n8n_data-${N8N_VERSION}; \
+	fi
 	@echo "Running Docker container..."
 	docker run -d \
 		--name n8n-${N8N_VERSION} \
@@ -39,8 +55,8 @@ docker-up: build-image
 # Make target to stop docker container
 docker-down:
 	@echo "Stopping and removing Docker container..."
-	docker stop n8n-${N8N_VERSION}
-	docker rm n8n-${N8N_VERSION}
+	@docker stop n8n-${N8N_VERSION} || echo "Container not running."
+	@docker rm n8n-${N8N_VERSION} || echo "Container not found."
 	# Optionally remove the image:
 	# docker rmi n8n-${N8N_VERSION}
 	# docker network rm n8n_network
