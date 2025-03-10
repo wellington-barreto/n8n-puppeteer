@@ -14,12 +14,14 @@ create-env:
 # Make target to build the n8n Docker image
 build-image:
 	@echo "Building Docker image..."
-	@if docker images n8n-${N8N_VERSION} -q > /dev/null 2>&1; then \
-		echo "Image 'n8n-${N8N_VERSION}' already exists. Removing..."; \
-		docker rmi -f n8n-${N8N_VERSION}; \
+	# Check if the image exists
+	@if ! docker image inspect n8n-${N8N_VERSION} > /dev/null 2>&1; then \
+		echo "No existing image found, proceeding to build."; \
 	else \
-		echo "No existing image to remove."; \
+		echo "Image 'n8n-${N8N_VERSION}' already exists. Removing..."; \
+		docker rmi -f n8n-${N8N_VERSION} || echo "Failed to remove the image."; \
 	fi
+	# Now build the new image
 	docker build \
 		--build-arg N8N_VERSION=${N8N_VERSION} \
 		--build-arg PUPPETEER_VERSION=${PUPPETEER_VERSION} \
