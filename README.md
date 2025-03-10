@@ -16,7 +16,7 @@ Docker is required to build and run containers for n8n. If you don't have Docker
 - **Read more**: [Docker Installation Guide](https://docs.docker.com/get-docker/)
 
 ### 2. **Make**
-Make is a build automation tool that simplifies tasks like building containers and managing projects. It is required for running the `make up` command to start n8n.
+Make is a build automation tool that simplifies tasks like building containers and managing projects. It is required for running the `make init` command to start n8n.
 
 - **Read more**: [Make Installation Guide](https://www.gnu.org/software/make/)
 
