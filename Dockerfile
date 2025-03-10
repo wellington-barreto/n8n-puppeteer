@@ -1,73 +1,33 @@
-ARG NODE_VERSION=20
-FROM n8nio/base:${NODE_VERSION}
+FROM node:20-alpine
 
 ARG N8N_VERSION
-RUN if [ -z "$N8N_VERSION" ] ; then echo "The N8N_VERSION argument is missing!" ; exit 1; fi
-
 ARG PUPPETEER_VERSION
-RUN if [ -z "$PUPPETEER_VERSION" ] ; then echo "The PUPPETEER_VERSION argument is missing!" ; exit 1; fi
+ARG PUPPETEER_DEPS="chromium nss freetype harfbuzz ttf-freefont yarn libstdc++ bash tini"
 
-LABEL org.opencontainers.image.title="n8n"
-LABEL org.opencontainers.image.description="Workflow Automation Tool"
-LABEL org.opencontainers.image.source="https://github.com/n8n-io/n8n"
-LABEL org.opencontainers.image.url="https://n8n.io"
-LABEL org.opencontainers.image.version=${N8N_VERSION}
+# Install system dependencies
+RUN apk add --no-cache ${PUPPETEER_DEPS}
 
-ENV N8N_VERSION=${N8N_VERSION}
-ENV NODE_ENV=production
-ENV N8N_RELEASE_TYPE=stable
-RUN set -eux; \
-	npm install -g --omit=dev n8n@${N8N_VERSION} --ignore-scripts && \
-	npm rebuild --prefix=/usr/local/lib/node_modules/n8n sqlite3 && \
-	rm -rf /usr/local/lib/node_modules/n8n/node_modules/@n8n/chat && \
-	rm -rf /usr/local/lib/node_modules/n8n/node_modules/@n8n/design-system && \
-	rm -rf /usr/local/lib/node_modules/n8n/node_modules/n8n-editor-ui/node_modules && \
-	find /usr/local/lib/node_modules/n8n -type f -name "*.ts" -o -name "*.js.map" -o -name "*.vue" | xargs rm -f && \
-	rm -rf /root/.npm
+# Install tini
+RUN apk add --no-cache tini
 
-# Setup the Task Runner Launcher
-ARG TARGETPLATFORM
-ARG LAUNCHER_VERSION=1.1.1
-COPY n8n-task-runners.json /etc/n8n-task-runners.json
-# Download, verify, then extract the launcher binary
-RUN \
-	if [[ "$TARGETPLATFORM" = "linux/amd64" ]]; then export ARCH_NAME="amd64"; \
-	elif [[ "$TARGETPLATFORM" = "linux/arm64" ]]; then export ARCH_NAME="arm64"; fi; \
-	mkdir /launcher-temp && \
-	cd /launcher-temp && \
-	wget https://github.com/n8n-io/task-runner-launcher/releases/download/${LAUNCHER_VERSION}/task-runner-launcher-${LAUNCHER_VERSION}-linux-${ARCH_NAME}.tar.gz && \
-	wget https://github.com/n8n-io/task-runner-launcher/releases/download/${LAUNCHER_VERSION}/task-runner-launcher-${LAUNCHER_VERSION}-linux-${ARCH_NAME}.tar.gz.sha256 && \
-	# The .sha256 does not contain the filename --> Form the correct checksum file
-	echo "$(cat task-runner-launcher-${LAUNCHER_VERSION}-linux-${ARCH_NAME}.tar.gz.sha256) task-runner-launcher-${LAUNCHER_VERSION}-linux-${ARCH_NAME}.tar.gz" > checksum.sha256 && \
-	sha256sum -c checksum.sha256 && \
-	tar xvf task-runner-launcher-${LAUNCHER_VERSION}-linux-${ARCH_NAME}.tar.gz --directory=/usr/local/bin && \
-	cd - && \
-	rm -r /launcher-temp
+# Install n8n
+RUN npm install -g --omit=dev n8n@${N8N_VERSION}
+
+# Install Puppeteer and additional packages
+RUN npm install puppeteer-core@${PUPPETEER_VERSION} --prefix /usr/local/lib/node_modules/n8n \
+    && npm install -g --omit=dev cheerio n8n-workflow
+
+# Tell Puppeteer to skip Chromium download & use installed Chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+# Create required directories and set ownership
+RUN mkdir -p /home/node/.n8n && chown node:node /home/node/.n8n
 
 COPY docker-entrypoint.sh /
 
-# Add puppeteer and chromium components.
-RUN \
-	apk add --no-cache \
-	chromium \
-	nss \
-	freetype \
-	harfbuzz \
-	ttf-freefont \
-	yarn \
-	&& apk --no-cache add --virtual fonts msttcorefonts-installer fontconfig \
-	&& update-ms-fonts \
-	&& fc-cache -f \
-	&& apk del fonts \
-	&& find  /usr/share/fonts/truetype/msttcorefonts/ -type l -exec unlink {} \; \
-	&& rm -rf /root /tmp/* /var/cache/apk/* && mkdir /root
-
-# Install puppeteer-core
-RUN npm cache clean --force && npm install puppeteer-core@${PUPPETEER_VERSION} --prefix /usr/local/lib/node_modules/n8n
-
-RUN \
-	mkdir .n8n && \
-	chown node:node .n8n
-ENV SHELL=/bin/sh
 USER node
-ENTRYPOINT ["tini", "--", "/docker-entrypoint.sh"]
+ENV SHELL=/bin/sh
+
+# Explicitly define tini entrypoint
+ENTRYPOINT ["/sbin/tini", "--", "/docker-entrypoint.sh"]
