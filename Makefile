@@ -1,5 +1,7 @@
-# Include .env file
-include .env
+# Include .env file if it exists
+ifneq ("$(wildcard .env)","")
+    include .env
+endif
 
 # Make target to generate .env file
 create-env:
