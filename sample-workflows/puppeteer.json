@@ -2,21 +2,8 @@
   "name": "Puppeteer Sample Workflow",
   "nodes": [
     {
-      "parameters": {
-        "jsCode": "const puppeteer = require('puppeteer-core');\n\ntry {\n  const browser = await puppeteer.launch({\n    headless: 'new',\n    executablePath: '/usr/bin/chromium-browser',\n    args: ['--no-sandbox', '--disable-setuid-sandbox'],\n  });\n\n  const page = await browser.newPage();\n  await page.goto('https://www.google.com');\n\n  const screenshot = await page.screenshot({ encoding: 'base64' }); // Capture screenshot as base64\n\n  await browser.close();\n\n  return [{ success: true, screenshot: screenshot }]; // Return the screenshot\n\n} catch (error) {\n  return [{ success: false, error: error.message }]; // Return error information\n}"
-      },
-      "id": "fc3dab83-e6e4-4ccd-9cc1-bfa9e2c38943",
-      "name": "Get Google Screenshot",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        220,
-        0
-      ]
-    },
-    {
       "parameters": {},
-      "id": "1dc10281-b60a-4fdc-94dd-183788c33277",
+      "id": "4ed049f3-790e-469e-89e4-4ae78c70d05b",
       "name": "Manual Trigger",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
@@ -34,31 +21,62 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        440,
-        0
+        460,
+        -120
       ],
-      "id": "c104c313-e9fd-46d7-8df6-d260e13622a1",
+      "id": "599bc834-fa45-4c52-8b98-5ea84c5917ad",
       "name": "Show Screenshot"
+    },
+    {
+      "parameters": {
+        "jsCode": "const puppeteer = require('puppeteer-core');\n\ntry {\n  const browser = await puppeteer.launch({\n    headless: 'new',\n    executablePath: '/usr/bin/chromium',\n    args: ['--no-sandbox', '--disable-setuid-sandbox'],\n  });\n\n  const page = await browser.newPage();\n  await page.goto('https://www.example.com', { waitUntil: 'domcontentloaded' });\n\n  const screenshot = await page.screenshot({ encoding: 'base64' });\n  const pageContent = await page.content(); // Get the full HTML content of the page\n\n  await browser.close();\n\n  return [{ \n    json: { \n      success: true, \n      screenshot: screenshot, \n      content: pageContent \n    } \n  }];\n} catch (error) {\n  return [{ \n    json: { \n      success: false, \n      error: error.message || 'Unknown error', \n      stack: error.stack || 'No stack trace available' \n    } \n  }];\n}"
+      },
+      "id": "6a3b9f85-b4d1-411f-a1ea-0b9ec96cacd6",
+      "name": "Get Web Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cheerio = require('cheerio');\n\ntry {\n  const html = $input.first().json.content;\n\n  // Load HTML into Cheerio\n  const $ = cheerio.load(html);\n\n  // Extract data\n  const title = $('title').text();\n  const metaCharset = $('meta[charset]').attr('charset');\n  const metaViewport = $('meta[name=\"viewport\"]').attr('content');\n  const bodyText = $('body').text().trim().replace(/\\s+/g, ' '); // Remove extra whitespace\n\n  return [{\n    json: {\n      success: true,\n      title,\n      meta: {\n        charset: metaCharset,\n        viewport: metaViewport\n      },\n      bodyText\n    }\n  }];\n} catch (error) {\n  return [{\n    json: {\n      success: false,\n      error: error.message || 'Unknown error',\n      stack: error.stack || 'No stack trace available'\n    }\n  }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        80
+      ],
+      "id": "9ff4edbd-1a2c-4e02-a5b8-58a08e20d3d7",
+      "name": "Parse Web Content"
     }
   ],
   "pinData": {},
   "connections": {
-    "Get Google Screenshot": {
+    "Manual Trigger": {
       "main": [
         [
           {
-            "node": "Show Screenshot",
+            "node": "Get Web Content",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Manual Trigger": {
+    "Get Web Content": {
       "main": [
         [
           {
-            "node": "Get Google Screenshot",
+            "node": "Show Screenshot",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Parse Web Content",
             "type": "main",
             "index": 0
           }
@@ -70,10 +88,11 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "1a20d6a4-2cb9-4211-9a2e-6b3554bd7358",
+  "versionId": "29962196-9e4e-415d-b8c0-ba917c8c210d",
   "meta": {
+    "templateCredsSetupCompleted": true,
     "instanceId": "a2dd5ac79a20d5820a1738a49a3d72ac79185b8ee225254493f06727426144cb"
   },
-  "id": "YGh4Ftjet7eDGIzS",
+  "id": "spZu8Cpc9de1kYRH",
   "tags": []
 }
