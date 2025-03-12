@@ -1,0 +1,470 @@
+{
+  "name": "Puppeteer - NetSuite UI with 2FA (Demo)",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2ed8bf47-5657-474a-9205-53ec73762c95",
+              "name": "email",
+              "value": "youremail@example.com",
+              "type": "string"
+            },
+            {
+              "id": "fc54d46e-9f0b-4d88-9fcc-5b23d446d9a9",
+              "name": "password",
+              "value": "yourpasswordvalue",
+              "type": "string"
+            },
+            {
+              "id": "2c894e23-321d-4d24-b107-3698407cb279",
+              "name": "totpSecret",
+              "value": "alongvaluefromnetsuite2fa",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -40,
+        140
+      ],
+      "id": "06244f16-72e1-4b76-ba19-4573f6be47f1",
+      "name": "Set Vars"
+    },
+    {
+      "parameters": {},
+      "id": "4d07fb71-2cde-4635-a391-234ace2d4f5b",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        300
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "options": {
+          "digits": 6,
+          "period": 30
+        }
+      },
+      "type": "n8n-nodes-base.totp",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        540
+      ],
+      "id": "8cb7d6eb-8991-4f12-92a2-cbb7c9e0e3c5",
+      "name": "NetSuite TOTP",
+      "credentials": {
+        "totpApi": {
+          "id": "UsacPRVAktF70aSq",
+          "name": "NetSuite TOTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const puppeteer = require('puppeteer-core');\n\ntry {\n    console.log(\"🚀 Starting Puppeteer script...\");\n\n    const browser = await puppeteer.launch({\n        headless: 'new',\n        executablePath: '/usr/bin/chromium',\n        args: ['--no-sandbox', '--disable-setuid-sandbox']\n    });\n\n    console.log(\"🌐 Opening a new page...\");\n    const page = await browser.newPage();\n    console.log(\"✅ New page opened.\");\n\n    const url = 'https://system.netsuite.com/pages/customerlogin.jsp';\n    console.log(`🌍 Navigating to: ${url}`);\n    await page.goto(url, { waitUntil: 'domcontentloaded' });\n    console.log(\"✅ Page loaded successfully.\");\n\n    const email = $('Set Vars').first().json.email;\n    const password = $('Set Vars').first().json.password;\n    console.log(\"✏️ Filling in login credentials...\");\n    await page.type('#email', email);\n    await page.type('#password', password);\n\n    console.log(\"🔑 Submitting login form...\");\n    await page.keyboard.press('Enter');\n\n    // Wait for navigation and potential 2FA page\n    await page.waitForNavigation({ waitUntil: 'networkidle0' });\n    console.log(\"✅ Navigation completed (potential 2FA).\");\n\n    // Check if the 2FA input is present\n    try {\n        await page.waitForSelector('#uif56_input', { timeout: 10000 }); // Wait up to 10 seconds\n\n        console.log(\"🔐 2FA input found. Entering code...\");\n        await page.type('#uif56_input', $('NetSuite TOTP').first().json.token); // Enter your 2FA code\n        await page.keyboard.press('Enter');\n\n        await page.waitForNavigation({ waitUntil: 'networkidle0' });\n        console.log(\"✅ 2FA submitted successfully.\");\n\n    } catch (e) {\n        console.log(\"2FA input not found, assuming no 2FA required or already logged in.\");\n    }\n\n    // Set viewport and take screenshot\n    await page.setViewport({ width: 1920, height: 1080 });\n    console.log(\"📸 Capturing screenshot...\");\n    const screenshot = await page.screenshot({ encoding: 'base64' });\n    console.log(\"✅ Screenshot captured.\");\n\n    console.log(\"📝 Extracting page content...\");\n    const pageContent = await page.content();\n    console.log(\"✅ Page content extracted.\");\n\n    console.log(\"🍪 Extracting cookies...\");\n    const cookies = await page.cookies();\n    console.log(\"✅ Cookies extracted.\");\n\n    await browser.close();\n\n    return [{\n        json: {\n            success: true,\n            screenshot: screenshot,\n            content: pageContent,\n            cookies: cookies,\n            message: \"Browser initialized, logged in, and cookies extracted successfully.\"\n        }\n    }];\n} catch (error) {\n    console.error(\"🔥 An error occurred:\", error.message);\n    console.error(\"📝 Stack trace:\", error.stack);\n\n    return [{\n        json: {\n            success: false,\n            error: error.message || 'Unknown error',\n            stack: error.stack || 'No stack trace available',\n        }\n    }];\n}"
+      },
+      "id": "742bc696-6c48-472a-b9aa-2aea4dac747a",
+      "name": "NetSuite Login w/ 2FA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. Set Login Vars\n- login email\n- login password\n- 2FA Secret Key",
+        "height": 300,
+        "width": 220,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -100,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "db5524b9-6783-4f42-b3a3-c60f05b34f7a",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## 1. Entry Point \nSelect one of many workflow triggers available. n8n supports listeners, schedulers, chat tools and more.",
+        "height": 700,
+        "width": 260,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -380,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "a4d14e8d-a241-4b58-b920-6d314328f5d2",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 12
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        140
+      ],
+      "id": "cdac337a-5399-4d79-a26a-2243b708a44a",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "path": "4d0c3338-8da5-4aa3-ae48-e2973cc0e767",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        480
+      ],
+      "id": "644542b3-216c-44b3-bf0d-14295e953629",
+      "name": "Webhook",
+      "webhookId": "4d0c3338-8da5-4aa3-ae48-e2973cc0e767",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "## 3. Get 2FA Code\nUse NetSuite 2FA Secret Key to generate a one-time code",
+        "height": 360,
+        "width": 180,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -60,
+        340
+      ],
+      "typeVersion": 1,
+      "id": "4a9e2f60-afda-49b3-a332-ba17bfeb6b2d",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## 4. Login to NetSuite UI & Set Cookies\n- Input Email and Password\n- Press Enter\n- Input 2FA Code\n- Press Enter\n- Store Session Cookies\n- Screenshot Dashboard",
+        "height": 440,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        140,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "1ad32ece-8893-4fac-b485-387181d1cc2a",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "766490f1-eda0-4994-8ace-adae9d1c980b",
+              "name": "report_url",
+              "value": "https://<account>.app.netsuite.com/app/reporting/reportrunner.nl?cr=<reportId>",
+              "type": "string"
+            },
+            {
+              "id": "5ae6376c-468d-444d-81e4-0b3da086468f",
+              "name": "as_of_date_filter",
+              "value": "#crit_1_to",
+              "type": "string"
+            },
+            {
+              "id": "7fc772d1-0725-48cb-b1b5-9313167bcb25",
+              "name": "as_of_date",
+              "value": "01/31/1976",
+              "type": "string"
+            },
+            {
+              "id": "48d50f94-04aa-46cd-9385-2e810bf07e78",
+              "name": "subsidiary_filter",
+              "value": "#hddn_crit_3_1",
+              "type": "string"
+            },
+            {
+              "id": "33ef0b34-0c8c-4a28-bc36-b60d60dcfd8d",
+              "name": "subsidiary",
+              "value": "1",
+              "type": "string"
+            },
+            {
+              "id": "67aae8e7-cc40-473e-8145-45c5565cd7aa",
+              "name": "account_book_filter",
+              "value": "#hddn_accounting_book_id_2",
+              "type": "string"
+            },
+            {
+              "id": "58c25e9e-cb57-4428-a49d-a1668b2c8568",
+              "name": "account_book",
+              "value": "1",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        760,
+        100
+      ],
+      "id": "b13d6c91-0873-4df8-9cdd-147384e41f19",
+      "name": "Set Report Vars"
+    },
+    {
+      "parameters": {
+        "content": "## 6. Extract NetSuite UI Report\n- Set report variables\n- Navigate to the report\n- Set report filters\n- Refresh the page\n- Grab all content",
+        "height": 400,
+        "width": 400,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        600,
+        300
+      ],
+      "typeVersion": 1,
+      "id": "47481fd2-9e9b-439d-8a3b-d49e7a1d4fb2",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "screenshot",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        820,
+        360
+      ],
+      "id": "97066b27-1259-4741-93aa-d3d60455fdd4",
+      "name": "Show Report"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "screenshot",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        360,
+        120
+      ],
+      "id": "61508ade-0893-4e3d-aa37-298cbd470309",
+      "name": "Show Dashboard"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cheerio = require('cheerio');\n\nasync function run() {\n    try {\n        const htmlContent = $('NetSuite Report').first().json.content;\n        const C$ = cheerio.load(htmlContent);\n        const table = C$('table[id=\"rptdataarea\"]');\n\n        if (!table.length) {\n            throw new Error(\"⚠️ rptdata table not found in the HTML document.\");\n        }\n\n        console.log(\"✅ rptdataarea table found.\");\n\n        const headers = [];\n        const rows = [];\n\n        // Precise Header Extraction\n        const headerRow = table.find('tr').has('td.rpthdline1');\n        if (headerRow.length) {\n            headerRow.find('td.rpthdline1').each((i, el) => {\n                headers.push(C$(el).text().trim());\n            });\n        } else {\n            throw new Error(\"⚠️ Header row not found.\");\n        }\n\n        // Initialize an array to hold the results\n        const result = [];\n\n        // Precise Row Extraction\n        table.find('tr[rownum]').each((i, row) => {\n            const rowObject = {};\n\n            C$(row).find('td').each((j, cell) => {\n                const cellText = C$(cell).text().trim();\n                rowObject[headers[j]] = cellText;\n            });\n\n            result.push(rowObject);\n        });\n\n        // Return the structured JSON output as an array of objects\n        return result;\n    } catch (error) {\n        console.error(\"🔥 An error occurred:\", error.message);\n        console.error(\"📝 Stack trace:\", error.stack);\n\n        return [{\n            json: {\n                success: false,\n                error: error.message,\n                stack: error.stack\n            }\n        }];\n    }\n}\n\nreturn run();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        820,
+        540
+      ],
+      "id": "a2e8221d-5223-46c3-bbcd-b4c4754be3bd",
+      "name": "Parse Report HTML"
+    },
+    {
+      "parameters": {
+        "jsCode": "const puppeteer = require('puppeteer-core');\n\n// Delay function to add wait times\nfunction delay(time) {\n    return new Promise((resolve) => setTimeout(resolve, time));\n}\n\nasync function run() {\n    try {\n        const browser = await puppeteer.launch({\n            headless: true,\n            executablePath: '/usr/bin/chromium',\n            args: ['--no-sandbox', '--disable-setuid-sandbox']\n        });\n\n        // Set cookies after creating the page\n        const cookies = $('NetSuite Login w/ 2FA').first().json.cookies;\n        if (cookies && cookies.length > 0) {\n            await browser.setCookie(...cookies);\n            console.log(\"✅ Cookies set successfully.\");\n        }\n\n        const page = await browser.newPage();\n\n        // Navigate to NetSuite Report\n        const url = $('Set Report Vars').first().json.report_url;\n        console.log('Navigating to:', url);\n        await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });\n        // Wait for an additional 5 seconds using the delay function\n        await delay(5000);\n        console.log(\"✅ Page loaded successfully.\");\n\n        // Fetch filter variables\n        const {\n            as_of_date_filter,\n            subsidiary_filter,\n            account_book_filter,\n            as_of_date,\n            subsidiary,\n            account_book\n        } = $('Set Report Vars').first().json;\n    \n        // Update all filters\n        await page.evaluate((filters) => {\n            filters.forEach(({ selector, newValue }) => {\n                const input = document.querySelector(selector);\n                if (input) {\n                    input.value = newValue;\n                }\n            });\n        }, [\n            { selector: as_of_date_filter, newValue: as_of_date },\n            { selector: subsidiary_filter, newValue: subsidiary },\n            { selector: account_book_filter, newValue: account_book }\n        ]);\n        console.log(\"✅ Filter values set.\");\n    \n        // Wait for the refresh button and click it\n        await page.waitForSelector('#refresh', { visible: true });\n        await page.click('#refresh');\n        console.log(\"🔄 Refresh button clicked.\");\n    \n        // Wait for the page to fully reload\n        await page.waitForNavigation({ waitUntil: 'networkidle0' });\n        await delay(5000);\n        console.log(\"✅ Page refreshed successfully.\");\n      \n        // Take a screenshot after the page is loaded\n        await page.setViewport({ width: 1920, height: 1080 });\n        const screenshot = await page.screenshot({ encoding: 'base64' });\n        const pageContent = await page.content();\n\n        // Close the browser after the screenshot and content extraction\n        await browser.close();\n\n        console.log(\"✅ Screenshot taken.\");\n        return [{\n            json: {\n                success: true,\n                screenshot: screenshot,\n                content: pageContent\n            }\n        }];\n    } catch (error) {\n        console.error(\"🔥 An error occurred:\", error.message);\n        console.error(\"📝 Stack trace:\", error.stack);\n\n        return [{\n            json: {\n                success: false,\n                error: error.message || 'Unknown error',\n                stack: error.stack || 'No stack trace available',\n            }\n        }];\n    }\n}\n\nreturn run();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        620,
+        480
+      ],
+      "id": "c376bed7-8fe7-4b33-be18-0187b42b5152",
+      "name": "NetSuite Report"
+    },
+    {
+      "parameters": {
+        "content": "## 5. Set Report Variables\n- Report URL\n- Report Filter IDs\n- Report Filter Values",
+        "height": 260,
+        "width": 440,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        560,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "fc27087c-0fd7-4846-8194-81bcf28b81e5",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "options": {
+          "fileName": "report.csv",
+          "headerRow": true
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        340,
+        540
+      ],
+      "id": "bcdcea52-9c4c-4d7b-8aaf-efe95bb51744",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "content": "## 7. Prepare CSV \n- Convert JSON to CSV\n- Save file",
+        "height": 220,
+        "width": 400,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        140,
+        480
+      ],
+      "typeVersion": 1,
+      "id": "c6a00786-8bf5-4105-bfa9-1bdffdf039f0",
+      "name": "Sticky Note6"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Set Vars": {
+      "main": [
+        [
+          {
+            "node": "NetSuite TOTP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        []
+      ]
+    },
+    "NetSuite TOTP": {
+      "main": [
+        [
+          {
+            "node": "NetSuite Login w/ 2FA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NetSuite Login w/ 2FA": {
+      "main": [
+        [
+          {
+            "node": "Show Dashboard",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Set Report Vars",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Report Vars": {
+      "main": [
+        [
+          {
+            "node": "NetSuite Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NetSuite Report": {
+      "main": [
+        [
+          {
+            "node": "Show Report",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Parse Report HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Report HTML": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Vars",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "cf351ee1-2d54-4916-b268-6e04c29755d7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8e35ffb5d42567f58a7868eb73fae3d3f3ce4c4ac07ce28d27e8b3d30f4674ce"
+  },
+  "id": "AjUa3vYddXCh6IJ1",
+  "tags": []
+}
