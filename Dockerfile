@@ -1,37 +1,36 @@
-# Use the official Node.js 20 image based on Alpine for a lightweight base
-FROM node:20-alpine
+FROM docker.n8n.io/n8nio/n8n
 
-# Define build arguments for N8N and Puppeteer versions, and necessary dependencies for Puppeteer
-ARG N8N_VERSION
-ARG PUPPETEER_VERSION
-ARG PUPPETEER_DEPS="chromium nss freetype harfbuzz ttf-freefont yarn libstdc++ bash tini"
+USER root
 
-# Install system dependencies required by Puppeteer (e.g., Chromium and fonts)
-RUN apk add --no-cache ${PUPPETEER_DEPS}
+# Install Chrome dependencies and Chrome
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    glib \
+    freetype \
+    freetype-dev \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    udev \
+    ttf-liberation \
+    font-noto-emoji
 
-# Install tini (used to handle the init process and ensure that the container keeps running)
-RUN apk add --no-cache tini
-
-# Install n8n globally with the specified version and without development dependencies
-RUN npm install -g --omit=dev n8n@${N8N_VERSION}
-
-# Install Puppeteer (core version without Chromium, since we’re using the installed version of Chromium)
-RUN npm install puppeteer-core@${PUPPETEER_VERSION} --prefix /usr/local/lib/node_modules/n8n \
-    && npm install -g --omit=dev cheerio n8n-workflow
-
-# Set environment variables for Puppeteer to use the installed Chromium instead of downloading it
+# Tell Puppeteer to use installed Chrome instead of downloading it
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
-# Create the directory for n8n's configuration and set the appropriate ownership for the 'node' user
-RUN mkdir -p /home/node/.n8n && chown node:node /home/node/.n8n
+# Install n8n-nodes-puppeteer in a permanent location
+RUN mkdir -p /opt/n8n-custom-nodes && \
+    cd /opt/n8n-custom-nodes && \
+    npm install n8n-nodes-puppeteer && \
+    chown -R node:node /opt/n8n-custom-nodes
 
-# Switch to the 'node' user to run the application with least privilege
+# Copy our custom entrypoint
+COPY docker-custom-entrypoint.sh /docker-custom-entrypoint.sh
+RUN chmod +x /docker-custom-entrypoint.sh && \
+    chown node:node /docker-custom-entrypoint.sh
+
 USER node
 
-# Set default shell to /bin/sh (could be useful for scripts that use shell commands)
-ENV SHELL=/bin/sh
-
-# Use tini as the init system to ensure proper shutdown of n8n and to handle signals correctly
-# The entrypoint executes n8n using tini
-ENTRYPOINT ["/sbin/tini", "--", "n8n"]
+ENTRYPOINT ["/docker-custom-entrypoint.sh"]
