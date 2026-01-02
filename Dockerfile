@@ -3,7 +3,7 @@ FROM docker.n8n.io/n8nio/n8n
 USER root
 
 # Install Chrome dependencies and Chrome
-RUN apt-get update && apt-get install -y \
+RUN apk add --no-cache \
     chromium \
     nss \
     glib \
