@@ -2,19 +2,34 @@ FROM docker.n8n.io/n8nio/n8n:latest-debian
 
 USER root
 
-# Install Chrome dependencies and Chrome
+# Corrige repositórios Debian Buster (EOL)
+RUN sed -i 's|deb.debian.org|archive.debian.org|g' /etc/apt/sources.list \
+ && sed -i 's|security.debian.org|archive.debian.org|g' /etc/apt/sources.list \
+ && echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid
+
+# Instala Chromium + dependências
 RUN apt-get update && apt-get install -y \
     chromium \
-    nss \
-    glib \
-    freetype \
-    freetype-dev \
-    harfbuzz \
     ca-certificates \
-    ttf-freefont \
+    fonts-liberation \
+    fonts-noto-color-emoji \
+    libnss3 \
+    libxss1 \
+    libasound2 \
+    libatk1.0-0 \
+    libatk-bridge2.0.0 \
+    libcups2 \
+    libdrm2 \
+    libgbm1 \
+    libgtk-3-0 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    xdg-utils \
     udev \
-    ttf-liberation \
-    font-noto-emoji
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 
 # Tell Puppeteer to use installed Chrome instead of downloading it
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
