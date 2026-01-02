@@ -46,6 +46,6 @@ COPY docker-custom-entrypoint.sh /docker-custom-entrypoint.sh
 RUN chmod +x /docker-custom-entrypoint.sh && \
     chown node:node /docker-custom-entrypoint.sh
 
-USER node
+
 
 ENTRYPOINT ["/docker-custom-entrypoint.sh"]
