@@ -17,10 +17,9 @@ RUN apk add --no-cache \
     curl
 
 # Variáveis obrigatórias para Puppeteer no Alpine
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
-    PUPPETEER_PRODUCT=chrome \
-    NODE_ENV=production
+    N8N_CUSTOM_EXTENSIONS=/opt/n8n-custom-nodes
 
 # Criar diretórios necessários para o Chromium funcionar
 RUN mkdir -p /home/node/.cache \
