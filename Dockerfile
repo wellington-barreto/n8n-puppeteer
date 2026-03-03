@@ -2,7 +2,7 @@ FROM docker.io/n8nio/n8n:1.122.5
 
 USER root
 
-# Instalar Chromium + dependências completas
+# Instalar Chromium e dependências
 RUN apk add --no-cache \
     chromium \
     nss \
@@ -13,24 +13,24 @@ RUN apk add --no-cache \
     ttf-liberation \
     font-noto-emoji \
     udev \
-    dumb-init \
-    curl
+    dumb-init
 
-# Variáveis obrigatórias para Puppeteer no Alpine
-    ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+# Configurar Puppeteer
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
-    N8N_CUSTOM_EXTENSIONS=/opt/n8n-custom-nodes
+    PUPPETEER_PRODUCT=chrome \
+    NODE_ENV=production
 
-# Criar diretórios necessários para o Chromium funcionar
+# Criar diretórios necessários
 RUN mkdir -p /home/node/.cache \
     && mkdir -p /home/node/.config \
+    && mkdir -p /home/node/.n8n/custom \
     && chown -R node:node /home/node
 
-# Instalar node Puppeteer de forma persistente
-RUN mkdir -p /opt/n8n-custom-nodes \
-    && cd /opt/n8n-custom-nodes \
+# Instalar puppeteer node na pasta que o n8n realmente lê
+RUN cd /home/node/.n8n/custom \
     && npm install n8n-nodes-puppeteer \
-    && chown -R node:node /opt/n8n-custom-nodes
+    && chown -R node:node /home/node/.n8n
 
 USER node
 
